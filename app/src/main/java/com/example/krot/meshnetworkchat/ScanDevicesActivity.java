@@ -55,7 +55,7 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
     private Button btnStartHype;
     private Button btnStopHype;
     private EditText edtMessage;
-    private ImageView icSendMessage;
+    private Button btnSendMessage;
     private TextView tvReceivedMessage;
 
     @Nullable
@@ -90,13 +90,13 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
         btnStartHype = findViewById(R.id.btn_start_hype);
         btnStopHype = findViewById(R.id.btn_stop_hype);
         edtMessage = findViewById(R.id.edt_message);
-        icSendMessage = findViewById(R.id.icon_send_message);
+        btnSendMessage = findViewById(R.id.btn_send_message);
         tvReceivedMessage = findViewById(R.id.tv_received_message);
 
         //setOnClickListener
         btnStartHype.setOnClickListener(this);
         btnStopHype.setOnClickListener(this);
-        icSendMessage.setOnClickListener(this);
+        btnSendMessage.setOnClickListener(this);
 
         //setUpRecyclerViewAdapter
         setUpAdapter();
@@ -139,6 +139,7 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
         // Add this as an Hype observer
         Hype.addStateObserver(this);
         Hype.addNetworkObserver(this);
+        Hype.addMessageObserver(this);
 
         // Generate an app identifier in the HypeLabs dashboard (https://hypelabs.io/apps/),
         // by creating a new app. Copy the given identifier here.
@@ -221,6 +222,9 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
     @Override
     public void onHypeInstanceLost(Instance instance, Error error) {
         Log.i("WTF", PREFIX + ": onHypeInstanceLost");
+        if (nearbyDeviceSet != null) {
+            nearbyDeviceSet.clear();
+        }
     }
 
     @Override
@@ -263,9 +267,15 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
     @Override
     public void onHypeStop(Error error) {
         Log.i("WTF", PREFIX + ": onHypeStop");
+        if (nearbyDeviceSet != null && nearbyDeviceList != null) {
+            nearbyDeviceSet.clear();
+            nearbyDeviceList.clear();
+            deviceAdapter.setInstanceList(nearbyDeviceList);
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                deviceAdapter.notifyDataSetChanged();
                 Toast.makeText(ScanDevicesActivity.this, "Hype Service: disabled", Toast.LENGTH_SHORT).show();
             }
         });
@@ -315,15 +325,17 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
             case R.id.btn_stop_hype:
                 requestHypeToStop();
                 break;
-            case R.id.icon_send_message:
+            case R.id.btn_send_message:
                 if (count > 0) {
                     //send message here
                     String message = edtMessage.getText().toString().trim();
                     byte[] messageData = message.getBytes();
                     for (Iterator<NearbyDevice> iterator =  nearbyDeviceSet.iterator(); iterator.hasNext();) {
                         NearbyDevice currentNearbyDevice = iterator.next();
+                        Log.i("WTF", "send to: " + currentNearbyDevice.getInstance().getStringIdentifier() + " - message = " + new String(messageData));
                         Hype.send(messageData, currentNearbyDevice.getInstance());
                     }
+                    edtMessage.setText("");
                 } else {
                     Toast.makeText(this, "No instance found", Toast.LENGTH_SHORT).show();
                 }
@@ -335,26 +347,34 @@ public class ScanDevicesActivity extends AppCompatActivity implements StateObser
 
     /**MESSAGE OBSERVER CALLBACKS**/
     @Override
-    public void onHypeMessageReceived(Message message, Instance instance) {
-        if (message != null) {
-            String receivedMessage = new String(message.getData());
-            tvReceivedMessage.setText(receivedMessage);
-        }
+    public void onHypeMessageReceived(final Message message, Instance instance) {
+        Log.i("WTF", "Received");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                edtMessage.setText("");
+                if (message != null) {
+                    String receivedMessage = new String(message.getData());
+                    tvReceivedMessage.setText(receivedMessage);
+                }
+            }
+        });
+
 
     }
 
     @Override
     public void onHypeMessageFailedSending(MessageInfo messageInfo, Instance instance, Error error) {
-
+        Log.i("WTF", "Failed");
     }
 
     @Override
     public void onHypeMessageSent(MessageInfo messageInfo, Instance instance, float v, boolean b) {
-
+        Log.i("WTF", "Sent");
     }
 
     @Override
     public void onHypeMessageDelivered(MessageInfo messageInfo, Instance instance, float v, boolean b) {
-
+        Log.i("WTF", "Delivered");
     }
 }

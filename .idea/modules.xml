@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Hype/Hype.iml" filepath="$PROJECT_DIR$/Hype/Hype.iml" />
-      <module fileurl="file://$PROJECT_DIR$/MeshNetworkChat.iml" filepath="$PROJECT_DIR$/MeshNetworkChat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/HypeChat.iml" filepath="$PROJECT_DIR$/HypeChat.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
